@@ -1,20 +1,19 @@
-# Typing Test
+# WPM - Type faster!
 
-[![thumbnail](thumbnail.png)](http://tsoding.org/snake-c-wasm/)
-
+How many words per minute (WPM) can you type? Try it at: https://codingfisch.github.io/wpm/
 
 ## Build
 
-```console
+```bash
 clang -Os -fno-builtin -Wall -Wextra -Wswitch-enum --target=wasm32 --no-standard-libraries -Wl,--export=game_init -Wl,--export=game_render -Wl,--export=game_update -Wl,--export=game_keydown -Wl,--no-entry -Wl,--allow-undefined  -o wpm.wasm wpm.c
 ```
 
-## Running WASM version
+## Run locally via WASM
 
-```console
+```bash
 python3 -m http.server 6969
 ```
-
+Then 
 ## Font
 
 [Anek Latin Light](https://github.com/EkType/Anek)

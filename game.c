@@ -5,7 +5,7 @@
 
 #define BACKGROUND_COLOR 0xFF181818
 #define TEXT_COLOR 0xFFFFFFFF
-#define GRAY_COLOR 0xFFC0C0C0
+#define GRAY_COLOR 0xFF606060
 #define RED_COLOR 0xFF0000FF
 
 typedef enum {
@@ -73,26 +73,55 @@ static void fill_text_aligned(i32 x, i32 y, const char *text, u32 size, u32 colo
 }
 
 static const char *WORDS[] = {
-    "the", "of", "and", "a", "to", "in", "is", "you", "that", "it"
+    "the", "be", "of", "and", "a", "to", "in", "he", "have", "it", "that", "for", "they", "with", "as", "not", "on",
+    "she", "at", "by", "this", "we", "you", "do", "but", "from", "or", "which", "one", "would", "all", "will", "there",
+    "say", "who", "make", "when", "can", "more", "if", "no", "man", "out", "other", "so", "what", "time", "up", "go",
+    "about", "than", "into", "could", "state", "only", "new", "year", "some", "take", "come", "these", "know", "see",
+    "use", "get", "like", "then", "first", "any", "work", "now", "may", "such", "give", "over", "think", "most", "even",
+    "find", "day", "also", "after", "way", "many", "must", "look", "before", "great", "back", "through", "long",
+    "where", "much", "should", "well", "people", "down", "own", "just", "because", "good", "each", "those", "feel",
+    "seem", "how", "high", "too", "place", "little", "world", "very", "still", "nation", "hand", "old", "life", "tell",
+    "write", "become", "here", "show", "house", "both", "between", "need", "mean", "call", "develop", "under", "last",
+    "right", "move", "thing", "general", "school", "never", "same", "another", "begin", "while", "number", "part",
+    "turn", "real", "leave", "might", "want", "point", "form", "off", "child", "few", "small", "since", "against",
+    "ask", "late", "home", "interest", "large", "person", "end", "open", "public", "follow", "during", "present",
+    "without", "again", "hold", "govern", "around", "possible", "head", "consider", "word", "program", "problem",
+    "however", "lead", "system", "set", "order", "eye", "plan", "run", "keep", "face", "fact", "group", "play", "stand",
+    "increase", "early", "course", "change", "help", "line"
 };
 static const size_t NUM_WORDS = sizeof(WORDS) / sizeof(WORDS[0]);
-static const int NUM_TEST_WORDS = 20;
+static const int NUM_TEST_WORDS = 50;
 
 typedef struct {
     u32 width;
     u32 height;
     State state;
-    char target[256];
-    char input[256];
+    char target[512];
+    char input[512];
     size_t input_len;
     f32 time;
     f32 start_time;
     f32 end_time;
     f32 time_taken;
     int wpm;
+    f32 accuracy;
 } Game;
 
 static Game game = {0};
+
+static size_t get_char_index_after_n_words(size_t start, int n) {
+    size_t pos = start;
+    if (pos < strlen(game.target) && game.target[pos] == ' ') pos++;
+    int words = 0;
+    while (pos < strlen(game.target) && words < n) {
+        while (pos < strlen(game.target) && game.target[pos] != ' ') pos++;
+        words++;
+        if (words < n) {
+            if (pos < strlen(game.target) && game.target[pos] == ' ') pos++;
+        }
+    }
+    return pos;
+}
 
 void game_init(u32 width, u32 height)
 {
@@ -112,6 +141,7 @@ void game_init(u32 width, u32 height)
     game.end_time = 0;
     game.time_taken = 0;
     game.wpm = 0;
+    game.accuracy = 0;
     LOGF("Game initialized");
 }
 
@@ -150,11 +180,16 @@ void game_keydown(int key)
     }
 
     size_t tlen = strlen(game.target);
-    if (game.input_len == tlen && strcmp(game.input, game.target) == 0) {
+    if (game.input_len == tlen) {
         game.end_time = game.time;
         game.time_taken = game.end_time - game.start_time;
         if (game.time_taken <= 0) game.time_taken = 0.001f;
         game.wpm = (int)((f32)tlen / 5.0f * 60.0f / game.time_taken);
+        int correct = 0;
+        for (size_t i = 0; i < tlen; i++) {
+            if (game.input[i] == game.target[i]) correct++;
+        }
+        game.accuracy = (f32)correct / (f32)tlen * 100.0f;
         game.state = STATE_WIN;
     }
 }
@@ -164,27 +199,68 @@ void game_render(void)
     platform_fill_rect(0, 0, game.width, game.height, BACKGROUND_COLOR);
 
     if (game.state == STATE_PLAY) {
-        fill_text_aligned(game.width/2, game.height * 0.2, "Typing Speed Test", 32, TEXT_COLOR, ALIGN_CENTER);
+        fill_text_aligned(game.width/2, game.height * 0.2, "WPM - Type faster!", 32, TEXT_COLOR, ALIGN_CENTER);
 
         const u32 size = 32;
         const char *target = game.target;
         size_t tlen = strlen(target);
-        u32 total_width = platform_text_width(target, size);
-        i32 x = game.width / 2 - total_width / 2;
-        i32 y = game.height / 2;
-        for (size_t i = 0; i < tlen; i++) {
-            u32 color;
-            color = i < game.input_len ? ((game.input[i] == target[i]) ? TEXT_COLOR : RED_COLOR) : GRAY_COLOR;
-            char text[2] = {target[i], 0};
-            platform_fill_text(x, y, text, size, color);
-            x += platform_text_width(text, size);
+        const int words_per_line[] = {12, 13, 13, 12};
+        size_t line_starts[4];
+        size_t line_ends[4];
+        size_t current = 0;
+        for (int ln = 0; ln < 4; ln++) {
+            line_starts[ln] = current;
+            current = get_char_index_after_n_words(current, words_per_line[ln]);
+            line_ends[ln] = current;
+            if (ln < 3) {
+                if (current < tlen && target[current] == ' ') current++;
+                line_ends[ln] = current;
+            }
+        }
+
+        f32 start_y = game.height * 0.35f;
+        const i32 line_height = 40;
+        int blink = ((int)(game.time * 2.0f)) % 2;
+
+        for (int ln = 0; ln < 4; ln++) {
+            u32 line_width = 0;
+            for (size_t j = line_starts[ln]; j < line_ends[ln]; j++) {
+                char text[2] = {target[j], 0};
+                line_width += platform_text_width(text, size);
+            }
+
+            i32 x = game.width / 2 - line_width / 2;
+            i32 y = (i32)(start_y + ln * line_height);
+            i32 cur_x = x;
+
+            for (size_t j = line_starts[ln]; j < line_ends[ln]; j++) {
+                size_t i = j;
+                char text[2] = {target[i], 0};
+                u32 color = (i < game.input_len) ? ((game.input[i] == target[i]) ? TEXT_COLOR : RED_COLOR) : GRAY_COLOR;
+                platform_fill_text(cur_x, y, text, size, color);
+                cur_x += platform_text_width(text, size);
+            }
+
+            char cursor_on_this_line = (game.input_len >= line_starts[ln] && game.input_len < line_ends[ln]);
+            if (cursor_on_this_line && blink == 0) {
+                i32 cursor_cur = x;
+                size_t chars_before_cursor = game.input_len - line_starts[ln];
+                for (size_t k = 0; k < chars_before_cursor; k++) {
+                    size_t jj = line_starts[ln] + k;
+                    char cc[2] = {target[jj], 0};
+                    cursor_cur += platform_text_width(cc, size);
+                }
+                platform_fill_text(cursor_cur, y, "|", size, TEXT_COLOR);
+            }
         }
     } else { // STATE_WIN
         char buf[64];
         stbsp_snprintf(buf, sizeof(buf), "WPM: %d", game.wpm);
         fill_text_aligned(game.width/2, game.height * 0.3, buf, 48, TEXT_COLOR, ALIGN_CENTER);
+        stbsp_snprintf(buf, sizeof(buf), "Accuracy: %.1f%%", game.accuracy);
+        fill_text_aligned(game.width/2, game.height * 0.4, buf, 32, TEXT_COLOR, ALIGN_CENTER);
         stbsp_snprintf(buf, sizeof(buf), "Time taken: %.1f seconds", game.time_taken);
-        fill_text_aligned(game.width/2, game.height * 0.45, buf, 32, TEXT_COLOR, ALIGN_CENTER);
+        fill_text_aligned(game.width/2, game.height * 0.5, buf, 32, TEXT_COLOR, ALIGN_CENTER);
         fill_text_aligned(game.width/2, game.height * 0.7, "Press R to play again", 32, TEXT_COLOR, ALIGN_CENTER);
     }
 }
