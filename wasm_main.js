@@ -72,6 +72,19 @@ function loop(timestamp) {
     window.requestAnimationFrame(loop);
 }
 
+let input = document.createElement('input');
+input.type = 'text';
+input.style.position = 'absolute';
+input.style.opacity = 0;
+input.style.pointerEvents = 'none';
+input.style.left = '-9999px';
+document.body.appendChild(input);
+
+app.addEventListener('touchstart', (e) => {
+    input.focus();
+    e.preventDefault();
+});
+
 WebAssembly.instantiateStreaming(fetch('game.wasm'), {
     env: {
         platform_fill_rect,
