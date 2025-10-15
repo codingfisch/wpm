@@ -21,6 +21,7 @@ function setCanvasToWindowSize() {
     app.style.height = cssH + "px";
 
     ctx.imageSmoothingEnabled = false;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 
     if (wasm && wasm.instance && wasm.instance.exports && wasm.instance.exports.game_resize) {
         try {
