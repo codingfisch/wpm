@@ -25,7 +25,8 @@ function setCanvasToWindowSize() {
 
     if (wasm && wasm.instance && wasm.instance.exports && wasm.instance.exports.game_resize) {
         try {
-            wasm.instance.exports.game_resize(pixelW, pixelH);
+            // Pass logical width/height (not physical pixels)
+            wasm.instance.exports.game_resize(app.width / DPR, app.height / DPR);
         } catch (e) {
             console.warn("game_resize call failed:", e);
         }
@@ -71,7 +72,7 @@ function platform_fill_rect(x, y, w, h, color) {
 function platform_text_width(text_ptr, size) {
     const buffer = wasm.instance.exports.memory.buffer;
     const text = cstr_by_ptr(buffer, text_ptr);
-    ctx.font = (size * DPR) + "px AnekLatin";
+    ctx.font = size + "px AnekLatin";
     return ctx.measureText(text).width;
 }
 
@@ -80,7 +81,7 @@ function platform_fill_text(x, y, text_ptr, size, color) {
     const text = cstr_by_ptr(buffer, text_ptr);
 
     ctx.fillStyle = color_hex(color);
-    ctx.font = (size * DPR) + "px AnekLatin";
+    ctx.font = size + "px AnekLatin";
     ctx.fillText(text, x, y);
 }
 
@@ -124,7 +125,7 @@ WebAssembly.instantiateStreaming(fetch('game.wasm'), {
     }
 }).then((w) => {
     wasm = w;
-    wasm.instance.exports.game_init(app.width, app.height);
+    wasm.instance.exports.game_init(app.width / DPR, app.height / DPR);
 
     document.addEventListener('keydown', (e) => {
         if (e.key.length === 1 || e.key === 'Backspace') {
