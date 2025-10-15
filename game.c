@@ -191,7 +191,7 @@ void game_keydown(int key)
 void game_render(void)
 {
     platform_fill_rect(0, 0, game.width, game.height, BACKGROUND_COLOR);
-    const u32 size = game.width / 32;
+    const u32 size = game.width / 36;
 
     if (game.state == STATE_PLAY) {
         fill_text_aligned(game.width/2, game.height * 0.2, "WPM - Type faster!", 2 * size, TEXT_COLOR, ALIGN_CENTER);
