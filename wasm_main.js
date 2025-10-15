@@ -4,6 +4,37 @@ let app = document.getElementById("app");
 let ctx = app.getContext("2d");
 let wasm = null;
 
+let DPR = window.devicePixelRatio || 1;
+
+function setCanvasToWindowSize() {
+    const cssW = Math.max(1, Math.floor(window.innerWidth));
+    const cssH = Math.max(1, Math.floor(window.innerHeight));
+
+    DPR = window.devicePixelRatio || 1;
+    const pixelW = Math.max(1, Math.floor(cssW * DPR));
+    const pixelH = Math.max(1, Math.floor(cssH * DPR));
+
+    app.width = pixelW;
+    app.height = pixelH;
+
+    app.style.width = cssW + "px";
+    app.style.height = cssH + "px";
+
+    ctx.imageSmoothingEnabled = false;
+
+    if (wasm && wasm.instance && wasm.instance.exports && wasm.instance.exports.game_resize) {
+        try {
+            wasm.instance.exports.game_resize(pixelW, pixelH);
+        } catch (e) {
+            console.warn("game_resize call failed:", e);
+        }
+    }
+}
+
+window.addEventListener('resize', () => {
+    setCanvasToWindowSize();
+});
+
 function cstrlen(mem, ptr) {
     let len = 0;
     while (mem[ptr] != 0) {
@@ -37,15 +68,16 @@ function platform_fill_rect(x, y, w, h, color) {
 function platform_text_width(text_ptr, size) {
     const buffer = wasm.instance.exports.memory.buffer;
     const text = cstr_by_ptr(buffer, text_ptr);
-    ctx.font = size + "px AnekLatin";
+    ctx.font = (size * DPR) + "px AnekLatin";
     return ctx.measureText(text).width;
 }
 
 function platform_fill_text(x, y, text_ptr, size, color) {
     const buffer = wasm.instance.exports.memory.buffer;
     const text = cstr_by_ptr(buffer, text_ptr);
+
     ctx.fillStyle = color_hex(color);
-    ctx.font = size + "px AnekLatin";
+    ctx.font = (size * DPR) + "px AnekLatin";
     ctx.fillText(text, x, y);
 }
 
@@ -76,6 +108,8 @@ function loop(timestamp) {
     window.requestAnimationFrame(loop);
 }
 
+setCanvasToWindowSize();
+
 WebAssembly.instantiateStreaming(fetch('game.wasm'), {
     env: {
         platform_fill_rect,
@@ -91,9 +125,14 @@ WebAssembly.instantiateStreaming(fetch('game.wasm'), {
 
     document.addEventListener('keydown', (e) => {
         if (e.key.length === 1 || e.key === 'Backspace') {
-            wasm.instance.exports.game_keydown(e.key.charCodeAt(0));
+            let code = e.key === 'Backspace' ? 66 : e.key.charCodeAt(0);
+            wasm.instance.exports.game_keydown(code);
         }
     });
 
+    setCanvasToWindowSize();
+
     window.requestAnimationFrame(loop);
+}).catch((err) => {
+    console.error("WASM instantiation failed:", err);
 });

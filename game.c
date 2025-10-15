@@ -191,11 +191,11 @@ void game_keydown(int key)
 void game_render(void)
 {
     platform_fill_rect(0, 0, game.width, game.height, BACKGROUND_COLOR);
+    const u32 size = game.width / 48;
 
     if (game.state == STATE_PLAY) {
-        fill_text_aligned(game.width/2, game.height * 0.2, "WPM - Type faster!", 32, TEXT_COLOR, ALIGN_CENTER);
+        fill_text_aligned(game.width/2, game.height * 0.2, "WPM - Type faster!", 2 * size, TEXT_COLOR, ALIGN_CENTER);
 
-        const u32 size = 32;
         const char *target = game.target;
         size_t tlen = strlen(target);
         const int words_per_line[] = {12, 13, 13, 12};
@@ -213,7 +213,6 @@ void game_render(void)
         }
 
         f32 start_y = game.height * 0.35f;
-        const i32 line_height = 40;
         int blink = ((int)(game.time * 2.0f)) % 2;
 
         for (int ln = 0; ln < 4; ln++) {
@@ -224,7 +223,7 @@ void game_render(void)
             }
 
             i32 x = game.width / 2 - line_width / 2;
-            i32 y = (i32)(start_y + ln * line_height);
+            i32 y = (i32)(start_y + ln * size);
             i32 cur_x = x;
 
             for (size_t j = line_starts[ln]; j < line_ends[ln]; j++) {
@@ -244,17 +243,17 @@ void game_render(void)
                     char cc[2] = {target[jj], 0};
                     cursor_cur += platform_text_width(cc, size);
                 }
-                platform_fill_text(cursor_cur - 3, y, "|", size, YELLOW_COLOR);
+                platform_fill_text(cursor_cur - size / 10, y, "|", size, YELLOW_COLOR);
             }
         }
     } else { // STATE_WIN
         char buf[64];
         stbsp_snprintf(buf, sizeof(buf), "WPM: %d", game.wpm);
-        fill_text_aligned(game.width/2, game.height * 0.3, buf, 48, TEXT_COLOR, ALIGN_CENTER);
+        fill_text_aligned(game.width/2, game.height * 0.3, buf, size, TEXT_COLOR, ALIGN_CENTER);
         stbsp_snprintf(buf, sizeof(buf), "Accuracy: %.1f%%", game.accuracy);
-        fill_text_aligned(game.width/2, game.height * 0.4, buf, 32, TEXT_COLOR, ALIGN_CENTER);
+        fill_text_aligned(game.width/2, game.height * 0.4, buf, size, TEXT_COLOR, ALIGN_CENTER);
         stbsp_snprintf(buf, sizeof(buf), "Time taken: %.1f seconds", game.time_taken);
-        fill_text_aligned(game.width/2, game.height * 0.5, buf, 32, TEXT_COLOR, ALIGN_CENTER);
-        fill_text_aligned(game.width/2, game.height * 0.7, "Press R to play again", 32, TEXT_COLOR, ALIGN_CENTER);
+        fill_text_aligned(game.width/2, game.height * 0.5, buf, size, TEXT_COLOR, ALIGN_CENTER);
+        fill_text_aligned(game.width/2, game.height * 0.7, "Press R to play again", size, TEXT_COLOR, ALIGN_CENTER);
     }
 }
