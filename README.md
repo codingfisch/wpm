@@ -19,14 +19,10 @@ python3 -m http.server 6969
 ```
 Then visit the following URL in a browser: [http://localhost:6969/](http://localhost:6969/)
 
-## Font
-
-[Anek Latin Light](https://github.com/EkType/Anek)
-
-## Font
-
-[Anek Latin Light](https://github.com/EkType/Anek)
-
 ## Acknowledgement
 
 This repo is heavily inspired by [snake-c-wasm](https://github.com/tsoding/snake-c-wasm). Thank you [Tsoding](https://github.com/tsoding)!
+
+## Font
+
+[Anek Latin Light](https://github.com/EkType/Anek)
