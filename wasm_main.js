@@ -36,6 +36,8 @@ window.addEventListener('resize', () => {
     setCanvasToWindowSize();
 });
 
+window.addEventListener("load", setCanvasToWindowSize);
+
 function cstrlen(mem, ptr) {
     let len = 0;
     while (mem[ptr] != 0) {
