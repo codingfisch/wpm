@@ -7,6 +7,7 @@
 #define TEXT_COLOR 0xFFFFFFFF
 #define GRAY_COLOR 0xFF606060
 #define RED_COLOR 0xFF0000FF
+#define YELLOW_COLOR 0xFF34AEEB
 
 typedef enum {
     STATE_PLAY = 0,
@@ -40,14 +41,6 @@ static void strcpy(char *dst, const char *src) {
         ++i;
     }
     dst[i] = 0;
-}
-
-static int strcmp(const char *s1, const char *s2) {
-    while (*s1 && (*s1 == *s2)) {
-        s1++;
-        s2++;
-    }
-    return *(const unsigned char*)s1 - *(const unsigned char*)s2;
 }
 
 static void strcat_c(char *dst, const char *src) {
@@ -128,6 +121,7 @@ void game_init(u32 width, u32 height)
     game.width = width;
     game.height = height;
     game.target[0] = 0;
+    rand_state = (u64)platform_get_time();
     for (int i = 0; i < NUM_TEST_WORDS; i++) {
         size_t idx = rand() % NUM_WORDS;
         strcat_c(game.target, WORDS[idx]);
@@ -250,7 +244,7 @@ void game_render(void)
                     char cc[2] = {target[jj], 0};
                     cursor_cur += platform_text_width(cc, size);
                 }
-                platform_fill_text(cursor_cur, y, "|", size, TEXT_COLOR);
+                platform_fill_text(cursor_cur - 3, y, "|", size, YELLOW_COLOR);
             }
         }
     } else { // STATE_WIN

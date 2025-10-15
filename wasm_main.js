@@ -62,6 +62,10 @@ function platform_log(message_ptr) {
     console.log(message);
 }
 
+function platform_get_time() {
+    return performance.now();
+}
+
 let prev = null;
 function loop(timestamp) {
     if (prev !== null) {
@@ -72,19 +76,6 @@ function loop(timestamp) {
     window.requestAnimationFrame(loop);
 }
 
-let input = document.createElement('input');
-input.type = 'text';
-input.style.position = 'absolute';
-input.style.opacity = 0;
-input.style.pointerEvents = 'none';
-input.style.left = '-9999px';
-document.body.appendChild(input);
-
-app.addEventListener('touchstart', (e) => {
-    input.focus();
-    e.preventDefault();
-});
-
 WebAssembly.instantiateStreaming(fetch('game.wasm'), {
     env: {
         platform_fill_rect,
@@ -92,13 +83,14 @@ WebAssembly.instantiateStreaming(fetch('game.wasm'), {
         platform_panic,
         platform_log,
         platform_text_width,
+        platform_get_time,
     }
 }).then((w) => {
     wasm = w;
     wasm.instance.exports.game_init(app.width, app.height);
 
     document.addEventListener('keydown', (e) => {
-        if (e.key.length === 1) {
+        if (e.key.length === 1 || e.key === 'Backspace') {
             wasm.instance.exports.game_keydown(e.key.charCodeAt(0));
         }
     });
