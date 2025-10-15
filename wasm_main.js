@@ -4,7 +4,7 @@ let app = document.getElementById("app");
 let ctx = app.getContext("2d");
 let wasm = null;
 
-let DPR = 1;// window.devicePixelRatio || 1;
+let DPR = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
 
 function setCanvasToWindowSize() {
     const cssW = Math.max(1, Math.floor(window.innerWidth));
